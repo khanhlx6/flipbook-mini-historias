@@ -4,7 +4,9 @@
 
 Escribe una historia corta y se convierte en un **cuaderno animado**: cada página se dibuja con IA manteniendo el mismo personaje y el mismo estilo, y al final lo exportas como **Short vertical en MP4** con subtítulos, voz narrada y música de fondo. Perfecto para TikTok, YouTube Shorts e Instagram Reels.
 
-👉 **Pruébalo aquí:** [belumoka.com/flipbook-generator](https://belumoka.com/flipbook-generator/)
+👉 **Página del Auto:** [belumoka.com/flipbook-generator](https://belumoka.com/flipbook-generator/)
+
+🌐 **O úsalo directamente desde GitHub Pages:** [belumokasl-hub.github.io/flipbook-mini-historias](https://belumokasl-hub.github.io/flipbook-mini-historias/)
 
 <img width="686" height="1000" alt="flipbook-captura" src="https://github.com/user-attachments/assets/276f4529-326b-43f0-a70c-8e75a0ebc4e8" />
 
