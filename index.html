@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flipbook de historias v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light dark;--bg:#f5f5f3;--surface:#fff;--ink:#111214;--mute:#6c7078;--line:#e2e2de;--accent:#ff5a1f;--r:12px;
+--chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23888' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E")}
+@media(prefers-color-scheme:dark){:root{--bg:#0d0d0f;--surface:#161619;--ink:#f3f3f1;--mute:#8d9199;--line:#27272c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Inter",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:1080px;margin:0 auto;padding:48px 24px 80px;display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:56px;align-items:start}
+@media(max-width:860px){main{grid-template-columns:1fr;gap:32px;padding:28px 18px 60px}}
+h1{grid-column:1/-1;margin:0;font-size:clamp(2rem,5vw,3rem);line-height:1.05;font-weight:700;letter-spacing:-.035em}
+h1::after{content:"";display:inline-block;width:.28em;height:.28em;margin-left:.1em;border-radius:50%;background:var(--accent)}
+.sub{grid-column:1/-1;margin:-36px 0 0;color:var(--mute);max-width:56ch}
+@media(max-width:860px){.sub{margin-top:-20px}}
+form{display:flex;flex-direction:column;gap:18px}
+label{display:flex;flex-direction:column;gap:6px;font-size:.78rem;font-weight:500;color:var(--mute)}
+textarea,input,select{font:inherit;font-size:.92rem;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;transition:border-color .15s}
+textarea:hover,input:hover,select:hover{border-color:var(--mute)}
+textarea{min-height:120px;resize:vertical;line-height:1.5}
+select{appearance:none;-webkit-appearance:none;padding-right:34px;background-image:var(--chev);background-repeat:no-repeat;background-position:right 13px center;text-overflow:ellipsis}
+textarea:focus-visible,input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-color:transparent}
+input[type=range]{padding:0;accent-color:var(--accent);border:0;background:none}
+input[type=checkbox]{accent-color:var(--accent)}
+output{color:var(--ink);font-variant-numeric:tabular-nums}
+small{color:var(--mute);font-size:.74rem;font-weight:400;line-height:1.4}
+hr{border:0;border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button{font:inherit;font-size:.88rem;font-weight:600;border:1px solid transparent;border-radius:999px;padding:10px 18px;cursor:pointer;background:var(--ink);color:var(--bg);transition:opacity .15s,transform .1s,border-color .15s}
+button:hover{opacity:.86}
+button:active{transform:scale(.98)}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+button.ghost:hover{opacity:1;border-color:var(--ink)}
+button:disabled{opacity:.4;cursor:wait}
+#go{width:100%;padding:13px 18px;font-size:.95rem}
+#mp4{background:var(--accent);color:#fff}
+details{display:flex;flex-direction:column;gap:14px;border-top:1px solid var(--line);padding-top:14px;font-size:.85rem;color:var(--mute)}
+summary{cursor:pointer;list-style:none;font-size:.72rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ink);display:flex;justify-content:space-between;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-size:1.1rem;font-weight:400;color:var(--mute);letter-spacing:0}
+details[open]>summary::after{content:"–"}
+details[open]>summary{margin-bottom:2px}
+#status{min-height:1.4em;font-size:.84rem;color:var(--accent);font-weight:500}
+.book{display:flex;flex-direction:column;gap:20px;position:sticky;top:28px}
+@media(max-width:860px){.book{position:static}}
+.stage{width:100%;max-width:min(560px,calc(72vh * var(--ar,1)));margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:10px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 24px 60px -24px rgba(0,0,0,.28)}
+.frame{width:100%;aspect-ratio:var(--ar,1);background:var(--bg);border-radius:18px;display:grid;place-items:center;overflow:hidden}
+.frame img{width:100%;height:100%;object-fit:cover;display:block}
+.frame.flip{animation:flip .18s ease-out}
+@keyframes flip{from{opacity:.55;transform:scale(.985)}to{opacity:1;transform:none}}
+.cap{padding:12px 8px 4px;color:var(--mute);font-size:.76rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{color:var(--mute);padding:24px;text-align:center;font-size:.9rem}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:center;max-width:560px;margin:0 auto}
+.ctrl label{flex-direction:row;align-items:center;gap:8px;font-size:.8rem}
+.ctrl input[type=range]{width:96px}
+.ctrl input[type=checkbox]{width:auto}
+.strip{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px;max-width:560px;margin:0 auto;width:100%;scrollbar-width:thin}
+.strip button{flex:0 0 52px;padding:0;background:var(--line);border:2px solid transparent;border-radius:10px;aspect-ratio:var(--ar,1);overflow:hidden;opacity:.7}
+.strip button.on{border-color:var(--ink);opacity:1}
+.strip button.err{border-color:var(--accent)}
+.strip img{width:100%;height:100%;object-fit:cover;display:block}
+.edit{display:none;gap:8px;max-width:560px;margin:0 auto;width:100%}
+.edit.show{display:flex}
+.edit input{flex:1}
+.badge{display:flex;flex-direction:column;align-items:center;gap:10px;padding:0 24px 40px}
+.credit{font-size:.82rem;color:var(--mute)}
+.credit a{color:var(--ink);font-weight:600;text-decoration:none;border-bottom:1px solid var(--accent)}
+.credit a:hover{color:var(--accent)}
+.badge a{display:inline-block;line-height:0;opacity:.9;transition:opacity .15s}
+.badge a:hover{opacity:1}
+.badge img{height:32px;width:auto}
+@media(prefers-reduced-motion:reduce){.frame.flip{animation:none}button{transition:none}}
+</style>
+</head>
+<body>
+<main>
+<h1>Flipbook de historias</h1>
+<p class="sub">Escribe una historia corta y se convierte en un cuaderno animado. Cada página se dibuja con la misma semilla y el mismo personaje, y al final lo exportas como Short vertical en MP4 con subtítulos.</p>
+
+<form id="f">
+  <label>Tu historia
+    <textarea id="story" placeholder="Un zorro pequeño encuentra una linterna en el bosque, la enciende y descubre que sus sombras bailan.">Un zorro pequeño encuentra una linterna en el bosque, la enciende y descubre que su sombra baila.</textarea>
+  </label>
+  <details open>
+    <summary>Texto de cada página (IA de texto, necesita clave)</summary>
+    <label>Cómo crear el texto
+      <select id="smode">
+        <option value="create" selected>La IA escribe un cuento coherente a partir de mi idea</option>
+        <option value="mine">Usar mi texto tal cual, repartido por páginas</option>
+      </select>
+    </label>
+    <label>Palabras por página <input id="words" type="range" min="5" max="30" value="10"><output id="wo">10</output></label>
+    <label>Modelo de texto (de más barato a más caro)
+      <select id="tmodel"></select>
+      <small id="tinfo"></small>
+    </label>
+  </details>
+  <div class="row">
+    <label>Páginas
+      <select id="n"><option>4</option><option>5</option><option>6</option><option>8</option><option selected>12</option><option>16</option><option>24</option></select>
+    </label>
+    <label>Formato
+      <select id="ar"><option value="0.5625" selected>Short vertical 9:16</option><option value="1">Cuadrado</option><option value="1.778">Horizontal 16:9</option></select>
+    </label>
+  </div>
+  <label>Estilo
+    <select id="style">
+      <option value="hand-drawn pencil sketch, black and white, simple lines">Lápiz a mano</option>
+      <option value="soft watercolor illustration, storybook">Acuarela de cuento</option>
+      <option value="16-bit pixel art, limited palette">Pixel art</option>
+      <option value="bold comic book ink, flat colors">Cómic</option>
+      <option value="claymation stop-motion, plasticine figures">Plastilina stop-motion</option>
+    </select>
+  </label>
+  <label>Modelo de imagen (de más barato a más caro)
+    <select id="model"></select>
+    <small id="iinfo"></small>
+  </label>
+  <label>Otro id de modelo (opcional)
+    <input id="mcustom" autocomplete="off" placeholder="si lo rellenas, manda sobre la lista">
+  </label>
+  <details>
+    <summary>Clave de Pollinations (opcional)</summary>
+    <label>Con clave, la IA divide la historia en escenas coherentes. Sin ella, se corta el texto en trozos.
+      <input id="key" type="password" placeholder="sk_..." autocomplete="off">
+    </label>
+  </details>
+  <details open>
+    <summary>Audio del Short (voz y música)</summary>
+    <label style="flex-direction:row;align-items:center;gap:8px"><input id="vo" type="checkbox" style="width:auto" checked> Narrar el texto del cuento</label>
+    <label>Idioma de la narración
+      <select id="lang"></select>
+    </label>
+    <label>Modelo de voz (de más barato a más caro)
+      <select id="amodel"></select>
+      <small id="ainfo"></small>
+    </label>
+    <label>Voz
+      <select id="voice"></select>
+      <small id="vinfo"></small>
+    </label>
+    <label>Otra voz (escribe su id, opcional)
+      <input id="vcustom" autocomplete="off" placeholder="si lo rellenas, manda sobre la lista">
+    </label>
+    <label>Velocidad de la voz (modelos tts-1) <input id="vspeed" type="range" min="0.7" max="1.2" step="0.05" value="0.95"></label>
+    <button class="ghost" id="vtest" type="button">Probar voz</button>
+    <hr style="border:0;border-top:1px solid #3a4b5b;width:100%">
+    <label style="flex-direction:row;align-items:center;gap:8px"><input id="mu" type="checkbox" style="width:auto"> Música de fondo</label>
+    <label>Modelo de música (de más barato a más caro)
+      <select id="mmodel"></select>
+      <small id="minfo"></small>
+    </label>
+    <label>Música cantada en
+      <select id="mlang"></select>
+    </label>
+    <label>Estilo de música <input id="mp" value="calm cinematic instrumental, soft piano"></label>
+    <span>El audio se crea al pulsar Descargar Short, no al generar las páginas.</span>
+  </details>
+  <button id="go" type="submit">Crear flipbook</button>
+  <div id="status" role="status" aria-live="polite"></div>
+</form>
+
+<section class="book">
+  <div class="stage" id="stage" style="--ar:1">
+    <div class="frame" id="frame"><div class="empty">Tu flipbook aparecerá aquí.</div></div>
+    <div class="cap" id="cap"></div>
+  </div>
+  <div class="ctrl">
+    <button class="ghost" id="prev" type="button" aria-label="Página anterior">Anterior</button>
+    <button id="play" type="button">Reproducir</button>
+    <button class="ghost" id="next" type="button" aria-label="Página siguiente">Siguiente</button>
+    <label>Velocidad (vista previa) <input id="fps" type="range" min="1" max="12" value="4"></label>
+    <label><input id="pp" type="checkbox"> Ida y vuelta</label>
+    <label><input id="kb" type="checkbox" checked> Movimiento y subtítulos</label>
+    <label>Segundos por página <input id="secs" type="range" min="1" max="5" step="0.5" value="2.5"><output id="so">2.5</output></label>
+    <button id="mp4" type="button">Descargar Short MP4</button>
+  </div>
+  <div class="edit" id="edit">
+    <input id="eprompt" aria-label="Escena de esta página">
+    <button class="ghost" id="regen" type="button">Rehacer página</button>
+  </div>
+  <div class="strip" id="strip"></div>
+</section>
+</main>
+
+<footer class="badge">
+  <p class="credit">Creado por <a href="https://belumoka.com" target="_blank" rel="noopener">belumoka.com</a></p>
+  <a href="https://pollinations.ai/?ref=badge" target="_blank" rel="noopener">
+    <img
+      src="https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg"
+      alt="Made with pollinations.ai"
+    >
+  </a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const BASE = "https://gen.pollinations.ai";
+let frames = [], cur = 0, timer = null, dir = 1, seed = 1, character = "", style = "";
+
+try { $("key").value = localStorage.getItem("pk") || ""; } catch (e) {}
+
+const status = t => $("status").textContent = t;
+
+function splitLocal(text, n) {
+  let parts = text.split(/(?<=[.!?])\s+|\n+/).map(x => x.trim()).filter(Boolean);
+  if (parts.length < n) parts = text.split(/(?<=[.!?,;:])\s+|\n+/).map(x => x.trim()).filter(Boolean);
+  while (parts.length < n) {            // parte el trozo más largo por la mitad de sus palabras
+    let m = 0; parts.forEach((x, i) => { if (x.length > parts[m].length) m = i; });
+    const w = parts[m].split(/\s+/);
+    if (w.length < 2) break;
+    parts.splice(m, 1, w.slice(0, Math.ceil(w.length / 2)).join(" "), w.slice(Math.ceil(w.length / 2)).join(" "));
+  }
+  const out = [];
+  for (let g = 0; g < n; g++) {         // si sobran trozos, los junta de forma pareja
+    const a = Math.floor(g * parts.length / n), b = Math.max(a + 1, Math.floor((g + 1) * parts.length / n));
+    out.push(parts.slice(a, b).join(" "));
+  }
+  return out;
+}
+const LANGNAME = () => $("lang").value ? $("lang").selectedOptions[0].text : "the same language as the story";
+async function splitAI(text, n, key) {
+  const mode = $("smode").value, W = +$("words").value, lang = LANGNAME();
+  const scenesRule = `"scenes": [exactly ${n} English image prompts, one per page, each showing exactly what its caption says as ONE single moment in ONE single picture (never mention panels, frames, sequences, storyboards, grids or sheets); always describe the main character the same way]`;
+  const sys = mode === "create"
+    ? `You are a storyteller and storyboard artist. From the user's idea, write ONE coherent short story told in exactly ${n} consecutive pieces, one per picture. Reply ONLY with JSON: {"character": "one-line visual description of the main character, identical on every page", ${scenesRule}, "captions": [exactly ${n} narration lines written in ${lang}, about ${W} words each, meant to be read aloud]}. The captions together must form a complete story with a beginning, a middle and an end; each line continues the previous one, with no repetition and no numbering.`
+    : `You turn the user's story into a flipbook. Reply ONLY with JSON: {"character": "one-line visual description of the main character, identical on every page", ${scenesRule}, "captions": [exactly ${n} consecutive segments of the ORIGINAL story text, copied word for word without rewriting or summarizing, together covering the whole story in order, written in ${lang}]}.`;
+  let last;
+  for (const id of idCandidates($("tmodel").value)) {
+    try {
+      const r = await fetch(BASE + "/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
+        body: JSON.stringify({ model: id, messages: [{ role: "system", content: sys }, { role: "user", content: text }] })
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const j = await r.json();
+      const raw = j.choices[0].message.content;
+      const d = JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1));
+      if (!Array.isArray(d.scenes) || !Array.isArray(d.captions) || d.scenes.length < n || d.captions.length < n) throw new Error("respuesta incompleta");
+      return d;
+    } catch (e) { last = e; }
+  }
+  throw last;
+}
+
+function imgUrl(scene, model, key, ar) {
+  const L = 1024, w = Math.round((ar >= 1 ? L : L * ar) / 8) * 8, h = Math.round((ar >= 1 ? L / ar : L) / 8) * 8;
+  const p = `One single illustration showing only one moment: ${scene}. ` +
+    (character ? `Main character: ${character}. ` : "") +
+    (storyCtx ? `The story, for context only: ${storyCtx} ` : "") +
+    `Style: ${style}. One single image that fills the whole frame, no collage, no grid, no split panels, no comic panels, no borders, no text.`;
+  let u = `${BASE}/image/${encodeURIComponent(p)}?model=${encodeURIComponent(model)}&seed=${seed}&width=${w}&height=${h}&nologo=true&negative_prompt=${encodeURIComponent("collage, grid, multiple panels, split screen, comic panels, contact sheet, borders, text, watermark")}`;
+  if (key) u += "&key=" + encodeURIComponent(key);
+  return u;
+}
+
+let modelIds = [], IMG_LIMIT = 3, IMG_GAP = 0, storyCtx = "";
+function frameUrl(f) { return imgUrl(f.scene, modelIds[f.k] || modelIds[0], $("key").value.trim(), +$("ar").value); }
+function load(i, tries = 3) {
+  const fr = frames[i];
+  return new Promise(res => {
+    const im = new Image(); im.crossOrigin = "anonymous";
+    im.onload = () => { fr.img = im; fr.err = false; renderStrip(); res(); };
+    im.onerror = () => {
+      if (fr.k < modelIds.length - 1) { fr.k++; fr.url = frameUrl(fr); load(i, tries).then(res); }
+      else if (tries > 1) setTimeout(() => { fr.k = 0; fr.url = frameUrl(fr); load(i, tries - 1).then(res); }, 2500);
+      else { fr.err = true; renderStrip(); res(); }
+    };
+    im.src = fr.url;
+  });
+}
+
+async function pool(items, limit, fn) {
+  let k = 0;
+  await Promise.all(Array.from({ length: limit }, async () => {
+    while (k < items.length) { const i = k++; await fn(i); if (IMG_GAP) await wait(IMG_GAP); }
+  }));
+}
+
+$("f").addEventListener("submit", async e => {
+  e.preventDefault();
+  const text = $("story").value.trim();
+  if (!text) { status("Escribe una historia primero."); return; }
+  stop();
+  const n = +$("n").value, ar = +$("ar").value, key = $("key").value.trim();
+  modelIds = imageIds();
+  const IM = IMG.find(m => m.id === $("model").value) || {};
+  IMG_LIMIT = IM.rpm ? (IM.rpm >= 120 ? 6 : IM.rpm >= 60 ? 4 : 1) : 3;
+  IMG_GAP = IM.rpm ? Math.round(60000 / IM.rpm * IMG_LIMIT) : 0;
+  try { localStorage.setItem("pk", key); } catch (e) {}
+  style = $("style").value;
+  seed = Math.floor(Math.random() * 1e6);
+  $("go").disabled = true;
+  $("stage").style.setProperty("--ar", ar);
+  document.documentElement.style.setProperty("--ar", ar);
+
+  let scenes, caps;
+  character = "";
+  if (key) {
+    status("Dividiendo la historia en escenas...");
+    try { const d = await splitAI(text, n, key); scenes = d.scenes; caps = d.captions; character = d.character || ""; }
+    catch (err) { status("No pude usar la IA de texto (" + err.message + "). Uso el corte simple."); scenes = splitLocal(text, n); }
+  } else {
+    if ($("smode").value === "create") { status("Sin clave no puedo escribir un cuento nuevo: reparto tu texto tal cual."); await wait(1500); }
+    scenes = splitLocal(text, n);
+  }
+
+  if (!caps) caps = scenes.slice();
+  storyCtx = character ? "" : text.replace(/\s+/g, " ").slice(0, 400);
+  frames = scenes.slice(0, n).map((s, i) => ({ scene: s, cap: caps[i] || "", url: "", img: null, err: false }));
+  frames.forEach(f => { f.k = 0; f.url = frameUrl(f); });
+  cur = 0; renderStrip(); show(0);
+  let done = 0;
+  status(`Dibujando 0 de ${frames.length}...`);
+  await pool(frames, IMG_LIMIT, async i => { await load(i); status(`Dibujando ${++done} de ${frames.length}...`); if (i === 0) show(0); });
+  const bad = frames.filter(f => f.err).length;
+  status(bad ? `Listo, pero ${bad} página(s) fallaron. Selecciónalas y usa "Rehacer página".` : "Listo. Pulsa Reproducir.");
+  $("go").disabled = false;
+  $("edit").classList.add("show");
+});
+
+function show(i, anim = true) {
+  if (!frames.length) return;
+  cur = (i + frames.length) % frames.length;
+  const f = frames[cur], fr = $("frame");
+  fr.innerHTML = "";
+  if (f.img) fr.appendChild(f.img.cloneNode());
+  else fr.innerHTML = `<div class="empty">${f.err ? "Esta página falló" : "Dibujando..."}</div>`;
+  if (anim) { fr.classList.remove("flip"); void fr.offsetWidth; fr.classList.add("flip"); }
+  $("cap").textContent = `Página ${cur + 1} de ${frames.length}: ${f.scene}`;
+  $("eprompt").value = f.scene;
+  document.querySelectorAll(".strip button").forEach((b, k) => b.classList.toggle("on", k === cur));
+}
+
+function renderStrip() {
+  const s = $("strip");
+  s.innerHTML = "";
+  frames.forEach((f, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("aria-label", "Ir a la página " + (i + 1));
+    if (f.err) b.classList.add("err");
+    if (i === cur) b.classList.add("on");
+    if (f.img) b.appendChild(f.img.cloneNode());
+    b.onclick = () => { stop(); show(i); };
+    s.appendChild(b);
+  });
+}
+
+function tick() {
+  if (!frames.length) return;
+  let nx = cur + dir;
+  if ($("pp").checked) {
+    if (nx >= frames.length) { dir = -1; nx = frames.length - 2; }
+    if (nx < 0) { dir = 1; nx = 1; }
+  } else dir = 1;
+  show(Math.max(0, nx));
+}
+function start() { if (!frames.length) return; stop(false); timer = setInterval(tick, 1000 / +$("fps").value); $("play").textContent = "Pausar"; }
+function stop(label = true) { clearInterval(timer); timer = null; if (label) $("play").textContent = "Reproducir"; }
+
+$("play").onclick = () => timer ? stop() : start();
+$("prev").onclick = () => { stop(); show(cur - 1); };
+$("next").onclick = () => { stop(); show(cur + 1); };
+$("fps").oninput = () => { if (timer) start(); };
+
+$("regen").onclick = async () => {
+  if (!frames.length) return;
+  const f = frames[cur];
+  f.scene = $("eprompt").value.trim() || f.scene;
+  modelIds = imageIds(); f.k = 0; f.url = frameUrl(f);
+  f.img = null; f.err = false; show(cur); status("Rehaciendo la página " + (cur + 1) + "...");
+  await load(cur); show(cur); status(f.err ? "No se pudo rehacer. Cambia el texto y prueba otra vez." : "Página actualizada.");
+};
+
+/* ---------- Exportar vídeo MP4 ---------- */
+const FPS_OUT = 30;
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const dl = (blob, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); };
+
+const audioCache = new Map();
+async function fetchAudio(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.arrayBuffer();
+}
+async function decode(ab) {
+  const ac = new (window.AudioContext || window.webkitAudioContext)();
+  try { return await ac.decodeAudioData(ab.slice(0)); } finally { ac.close(); }
+}
+
+/* ===== Catálogo (precios de la página de modelos de Pollinations) ===== */
+const LANGS = [
+  ["", "Todos / el idioma del cuento"], ["es-ES", "Español (España)"], ["es-MX", "Español (México)"], ["es-AR", "Español (Argentina)"],
+  ["en-US", "English (US)"], ["en-GB", "English (UK)"], ["fr-FR", "Français"], ["pt-BR", "Português (Brasil)"], ["pt-PT", "Português (Portugal)"],
+  ["it-IT", "Italiano"], ["de-DE", "Deutsch"], ["nl-NL", "Nederlands"], ["pl-PL", "Polski"], ["ru-RU", "Русский"], ["tr-TR", "Türkçe"],
+  ["ar-SA", "العربية"], ["hi-IN", "हिन्दी"], ["ja-JP", "日本語"], ["ko-KR", "한국어"], ["zh-CN", "中文"]
+];
+// p = coste aproximado por 1.000 caracteres (USD). "~" = estimado por mí desde precio por tokens.
+const TTS = [
+  { id: "qwen/qwen3-tts-flash", name: "Qwen3-TTS Flash", p: 0.01, price: "$0.01/K car.", tier: "Paid", note: "multilingüe (idioma automático), 37 voces, voz por defecto Cherry" },
+  { id: "microsoft/mai-voice-2.1-flash", name: "MAI-Voice-2.1 Flash", p: 0.0113, price: "$0.0113/K car.", tier: "Quest", note: "23 idiomas, baja latencia" },
+  { id: "google/gemini-3.8-flash-lite-tts", name: "Gemini 3.8 Flash Lite TTS", p: 0.0126, price: "~$0.013/K car. ($6/M tokens)", tier: "Paid", note: "30 voces" },
+  { id: "openai/tts-1", name: "TTS-1", p: 0.015, price: "$0.015/K car.", tier: "Quest", note: "6 voces" },
+  { id: "x-ai/grok-tts", name: "Grok TTS", p: 0.015, price: "$0.015/K car.", tier: "Paid", note: "28 voces, control de estilo" },
+  { id: "qwen/qwen-audio-3.0-tts-flash", name: "Qwen-Audio 3.0 TTS Flash", p: 0.015, price: "$0.015/K car.", tier: "Paid", note: "emoción, tono y dialecto" },
+  { id: "fish-audio/s2.1-pro", name: "Fish Audio S2.1 Pro", p: 0.0158, price: "$0.0158/K bytes", tier: "Paid", note: "multilingüe, emoción en lenguaje natural" },
+  { id: "microsoft/mai-voice-2.1", name: "MAI-Voice-2.1", p: 0.0165, price: "$0.0165/K car.", tier: "Quest", note: "23 idiomas, ideal para narración larga" },
+  { id: "google/gemini-3.8-flash-tts", name: "Gemini 3.8 Flash TTS", p: 0.0189, price: "~$0.019/K car. ($9/M tokens)", tier: "Paid", note: "30 voces, estilo dirigible" },
+  { id: "openai/tts-1-hd", name: "TTS-1 HD", p: 0.03, price: "$0.03/K car.", tier: "Quest", note: "6 voces, más calidad" },
+  { id: "elevenlabs/eleven-flash-v2.5", name: "Eleven Flash v2.5", p: 0.04, price: "$0.04/K car.", tier: "Paid", note: "32 idiomas" },
+  { id: "elevenlabs/eleven-v4-turbo", name: "Eleven v4 Turbo", p: 0.04, price: "$0.04/K car.", tier: "Paid", note: "90+ idiomas" },
+  { id: "elevenlabs/eleven-multilingual-v2", name: "Eleven Multilingual v2", p: 0.08, price: "$0.08/K car.", tier: "Paid", note: "29 idiomas" },
+  { id: "elevenlabs/eleven-v3", name: "Eleven v3", p: 0.08, price: "$0.08/K car.", tier: "Paid", note: "emociones y etiquetas de audio" },
+  { id: "elevenlabs/eleven-v4", name: "Eleven v4", p: 0.08, price: "$0.08/K car.", tier: "Paid", note: "90+ idiomas, etiquetas de audio" }
+].sort((x, y) => x.p - y.p);
+// p = coste aproximado de una pista de ~30 s (USD)
+const MUSIC = [
+  { id: "stability-ai/stable-audio-3-medium", name: "Stable Audio 3 Medium", p: 0.0417, price: "$0.0376/gen + $0.0041 entrada", tier: "Paid", note: "música y ambientes estéreo, solo instrumental" },
+  { id: "elevenlabs/music-v2.5", name: "Eleven Music v2.5", p: 0.075, price: "$9/h (~$0.075 por 30 s)", tier: "Paid", note: "sigue mejor el prompt" },
+  { id: "elevenlabs/music-v2", name: "Eleven Music", p: 0.075, price: "$9/h (~$0.075 por 30 s)", tier: "Paid", note: "calidad de estudio" },
+  { id: "google/lyria-3.5", name: "Lyria 3.5", p: 0.08, price: "$0.08/gen", tier: "Paid", note: "canciones completas con o sin voz" },
+  { id: "stability-ai/stable-audio-3", name: "Stable Audio 3 Large", p: 0.26, price: "$0.26/gen", tier: "Paid", note: "máxima calidad, larga duración" }
+].sort((x, y) => x.p - y.p);
+
+function fillSelect(sel, rows, def) {
+  sel.innerHTML = "";
+  rows.forEach(r => { const o = document.createElement("option"); o.value = r[0]; o.textContent = r[1]; sel.appendChild(o); });
+  if (def) sel.value = def;
+}
+fillSelect($("lang"), LANGS, "es-ES");
+fillSelect($("mlang"), [["", "Solo instrumental"], ...LANGS.slice(1)], "");
+fillSelect($("amodel"), TTS.map(m => [m.id, `${m.name} · ${m.tier}`]), "qwen/qwen3-tts-flash");
+fillSelect($("mmodel"), MUSIC.map(m => [m.id, `${m.name} · ${m.tier}`]), "stability-ai/stable-audio-3-medium");
+
+
+
+const fmtP = p => "$" + (+p.toPrecision(2));
+// [id, peticiones por $1 (de la página de modelos), nivel, RPM opcional]. Paid = Pagado, Quest = Búsqueda en la página.
+const TXT = [
+  ["inclusionai/ling-3.0-flash-vl",24000,"Paid"],["mistralai/mistral-small-3.2",16000,"Paid"],["xiaomi/mimo-v2.5",15000,"Paid"],
+  ["amazon/nova-micro-v1",13000,"Paid"],["inception/mercury-2.5-preview",13000,"Paid"],["qwen/qwen3.7-flash",11000,"Paid"],
+  ["xiaomi/mimo-v2.6-flash",9300,"Paid"],["openai/gpt-oss-20b",6500,"Quest"],["mistralai/mistral-small-4",6100,"Paid",60],
+  ["inferenceport-ai/lightning-text-v2.1",5000,"Paid"],["meta/llama-4-maverick",4700,"Paid"],["inception/mercury-2",4300,"Paid"],
+  ["google/gemini-2.5-flash-lite",4100,"Paid"],["google/gemma-4-26b-a4b-it",3700,"Paid"],["inclusionai/ling-3.1-flash",3500,"Paid",8],
+  ["amazon/nova-2-lite-v1",3400,"Paid"],["openai/gpt-5.4-nano",3200,"Quest"],["openai/gpt-6-luna",3100,"Quest"],
+  ["meta/llama-4-scout",2900,"Paid",60],["nvidia/nemotron-3.5-lightning",2900,"Quest",60],["tencent/hy3",2800,"Paid"],
+  ["openai/gpt-5-nano",2500,"Quest"],["inferenceport-ai/lightning-text-v2",2500,"Paid"],["openai/gpt-5.6-luna",2400,"Quest"],
+  ["xiaomi/mimo-v2.5-pro",2200,"Paid"],["stepfun/step-3.5-flash",1600,"Paid"],["qwen/qwen3.8-flash",1400,"Paid"],
+  ["google/gemini-3.5-flash-lite",1400,"Paid"],["deepseek/deepseek-v4-flash-vision-exp",1400,"Paid"],["cohere/command-a-plus",1100,"Paid"],
+  ["meta/llama-3.3-70b-instruct",1100,"Quest"],["deepseek/deepseek-v4.1-flash",950,"Quest",60],["anthropic/claude-haiku-5.5",900,"Paid"],
+  ["qwen/qwen3.7-plus",900,"Paid"],["openai/gpt-5.4-mini",850,"Quest"],["deepseek/deepseek-v4.1-flash-1017",800,"Paid"],
+  ["minimax/minimax-m2.7",800,"Paid"],["mistralai/mistral-large-3",750,"Quest"],["stepfun/step-5-preview",700,"Paid"],
+  ["nvidia/nemotron-3.5-super-vl",700,"Paid"],["meta/muse-glimmer-30b",650,"Paid",60],["meituan/longcat-2.0",600,"Paid"],
+  ["minimax/minimax-m3.1-flash",550,"Quest"],["minimax/minimax-m3",550,"Quest",60],["deepseek/deepseek-v4-flash",550,"Quest",60],
+  ["stepfun/step-3.7-flash",500,"Paid"],["inception/mercury-3",500,"Paid"],["thinking-machines/inkling-small",450,"Paid"],
+  ["anthropic/claude-sonnet-4.6",450,"Paid"],["openai/gpt-5.6-terra",450,"Quest"],["google/gemma-4-31b-it",450,"Paid"],
+  ["z-ai/glm-5.3-flash",400,"Quest"],["qwen/qwen3.8-27b",350,"Paid"],["x-ai/grok-4.20",300,"Quest"],
+  ["qwen/qwen3.7-max",300,"Paid"],["meta/muse-spark-open",300,"Quest"],["anthropic/claude-haiku-4.5",250,"Paid"],
+  ["nvidia/nemotron-3-ultra",250,"Quest"],["tencent/hy4-preview",250,"Paid"],["x-ai/grok-4.3",250,"Quest"],
+  ["google/gemini-3.7-flash",250,"Paid"],["meta/muse-spark-1.2",200,"Paid"],["z-ai/glm-5.3-flashx",200,"Paid"],
+  ["moonshotai/kimi-k2.6",200,"Quest"],["anthropic/claude-sonnet-5.5",200,"Paid"],["openai/gpt-4o-mini",200,"Paid"],
+  ["openai/gpt-5.6-sol",200,"Quest"],["google/gemini-3-flash-preview",150,"Paid"],["openai/gpt-6.1-terra",150,"Quest"],
+  ["thinking-machines/inkling",150,"Paid"],["deepseek/deepseek-v4-pro",150,"Paid"],["openai/gpt-6-sol",150,"Quest"],
+  ["openai/gpt-5.4",150,"Quest"],["x-ai/grok-4.6",100,"Quest"],["xiaomi/mimo-v2.6-pro",100,"Paid"],
+  ["openai/gpt-6.1-sol",100,"Quest"],["google/gemini-3.8-flash",100,"Paid"],["openai/gpt-5.5",95,"Quest"],
+  ["qwen/qwen3.8-max-0902",95,"Paid"],["qwen/qwen3.8-max",90,"Paid"],["anthropic/claude-fable-5",90,"Paid"],
+  ["qwen/qwen3.8-2.4t-a95b",90,"Quest"],["meta/muse-spark-1.3",90,"Paid"],["mistralai/mistral-large-4",85,"Paid"],
+  ["anthropic/claude-opus-4.6",80,"Paid"],["x-ai/grok-4.7",70,"Paid"],["moonshotai/kimi-k3.1-pro",70,"Quest"],
+  ["google/gemini-3.1-pro-preview",70,"Paid"],["anthropic/claude-sonnet-5",70,"Paid"],["z-ai/glm-5.3",55,"Quest"],
+  ["moonshotai/kimi-k3.1-pro-high-speed",45,"Paid"],["z-ai/glm-5.2",40,"Paid"],["anthropic/claude-opus-5",30,"Paid"],
+  ["anthropic/claude-opus-4.7",30,"Paid"],["openai/gpt-6-astra",30,"Quest"],["google/gemini-4-argon",25,"Paid"],
+  ["moonshotai/kimi-k3",20,"Quest"],["anthropic/claude-opus-5.5-fast",20,"Paid"],["meta/muse-wonder-1.0",15,"Paid"],
+  ["anthropic/claude-fable-5.1",10,"Paid"],["anthropic/claude-opus-5.5",10,"Paid"]
+].map(r => ({ id: r[0], name: r[0].split("/").pop(), p: 1 / r[1], price: "≈" + fmtP(1 / r[1]) + "/petición", tier: r[2], rpm: r[3] })).sort((x, y) => x.p - y.p);
+fillSelect($("tmodel"), TXT.map(m => [m.id, `${m.name} · ${m.tier}`]), "openai/gpt-5.4-nano");
+function refreshText() {
+  const m = TXT.find(x => x.id === $("tmodel").value);
+  $("tinfo").textContent = m ? `Nivel: ${m.tier}.` + (m.rpm ? ` Límite: ${m.rpm} peticiones por minuto.` : "") + "" : "";
+}
+$("tmodel").addEventListener("change", refreshText); refreshText();
+$("words").oninput = () => $("wo").textContent = $("words").value;
+
+/* ===== Modelos de imagen (precios de la página de modelos de Pollinations) ===== */
+// p = coste por imagen (USD). Si la página solo daba "peticiones por $1" o precio por tokens/megapíxel, p = 1/peticiones.
+const fmt = p => "$" + (+p.toFixed(4));
+const IMG = [
+  ["lykon/dreamshaper-8-lcm", "DreamShaper 8 LCM", 0.0001, "Quest", "casi instantáneo, menos detalle", 300],
+  ["black-forest-labs/flux.1-schnell", "FLUX.1 Schnell", 0.002, "Quest", "rápido y buena calidad", 60],
+  ["tongyi-mai/z-image-turbo", "Z-Image Turbo", 0.004, "Quest", "rápido, salida nítida", 60],
+  ["prunaai/p-image", "P-Image", 0.005, "Paid", "barato para iterar"],
+  ["black-forest-labs/flux.2-klein-4b", "FLUX.2 Klein 4B", 0.005, "Quest", "hasta 2,4 megapíxeles", 60],
+  ["recraft/recraft-v4.1-flash", "Recraft V4.1 Flash", 0.007, "Paid", "raster rápido y barato"],
+  ["black-forest-labs/flux-3-image-klein", "FLUX.3 Image Klein", 0.009, "Paid", "hasta 4K con referencias"],
+  ["openai/gpt-image-2.5-flare", "GPT Image 2.5 Flare", 0.0118, "Paid", "generación y edición con referencias"],
+  ["openai/gpt-image-1-mini", "GPT Image 1 Mini", 0.0133, "Paid", "generación y edición con referencias"],
+  ["microsoft/mai-image-2.6-flash", "MAI Image 2.6 Flash", 0.0154, "Quest", "fotorrealista, texto preciso; límite bajo", 12],
+  ["qwen/qwen-image-2.1-turbo", "Qwen Image 2.1 Turbo", 0.016, "Paid", "barato"],
+  ["openai/gpt-image-2.5-sunburst", "GPT Image 2.5 Sunburst", 0.0182, "Paid", "detallado"],
+  ["bytedance/seedream-5.0-flash", "Seedream 5.0 Flash", 0.019, "Paid", "1K o 2K"],
+  ["inferenceport-ai/lightning-image-turbo", "Lightning Image Turbo", 0.02, "Paid", "límite bajo", 15],
+  ["x-ai/grok-imagine-image", "Grok Imagine", 0.02, "Paid", "fotorrealista"],
+  ["qwen/qwen-image", "Qwen Image", 0.025, "Paid", "bueno con texto dentro de la imagen"],
+  ["black-forest-labs/flux.1.1-pro", "FLUX 1.1 Pro", 0.03, "Quest", "dimensiones precisas y semillas reproducibles"],
+  ["krea/krea-2-medium", "Krea 2 Medium", 0.03, "Paid", "estilo marcado"],
+  ["ideogram-ai/ideogram-v4-turbo", "Ideogram 4.0 Turbo", 0.03, "Paid", "buen texto y tipografía"],
+  ["alibaba/wan-2.7-image", "Wan 2.7 Image", 0.03, "Paid", "hasta 2K"],
+  ["alibaba/wan-2.7-image-pro", "Wan 2.7 Image Pro", 0.03, "Paid", "4K, modo pensar"],
+  ["bytedance/seedream-4.0", "Seedream 4.0", 0.03, "Paid", "fotorrealista"],
+  ["black-forest-labs/flux.2-pro", "FLUX.2 Pro", 0.033, "Paid", "alta fidelidad"],
+  ["google/gemini-3.1-flash-lite-image", "Nano Banana 2 Lite", 0.033, "Paid", "rápido"],
+  ["bytedance/seedream-5.0-pro", "Seedream 5.0 Pro", 0.035, "Paid", "premium"],
+  ["bytedance/seedream-5.0-lite", "Seedream 5.0 Lite", 0.035, "Paid", "busca en la web y razona el prompt", 60],
+  ["microsoft/mai-image-2.6", "MAI Image 2.6", 0.04, "Quest", "fotorrealista detallado; límite bajo", 12],
+  ["google/gemini-2.5-flash-image", "Nano Banana", 0.04, "Paid", "sigue bien instrucciones"],
+  ["qwen/qwen-image-2.1-pro", "Qwen Image 2.1 Pro", 0.04, "Paid", "hasta 10 referencias"],
+  ["qwen/qwen-image-3", "Qwen Image 3", 0.04, "Paid", "texto multilingüe y composiciones"],
+  ["openai/gpt-image-2.6-flare", "GPT Image 2.6 Flare", 0.04, "Paid", "nuevo"],
+  ["bytedance/seedream-4.5", "Seedream 4.5", 0.0422, "Paid", "fotorrealismo premium"],
+  ["openai/gpt-image-2", "GPT Image 2", 0.05, "Paid", "alta resolución"],
+  ["black-forest-labs/flux-3-image", "FLUX.3 Image", 0.0506, "Paid", "buque insignia 1K o 2K"],
+  ["google/gemini-nano-banana-2.1", "Nano Banana 2.1", 0.05, "Paid", "hasta 2K"],
+  ["x-ai/grok-imagine-image-quality", "Grok Imagine Pro", 0.0528, "Paid", "más fidelidad"],
+  ["ideogram-ai/ideogram-v4-balanced", "Ideogram 4.0 Balanced", 0.06, "Paid", "equilibrio y buen texto"],
+  ["x-ai/grok-imagine-image-2.0", "Grok Imagine Image 2.0", 0.06, "Paid", "1K o 2K"],
+  ["openai/gpt-image-1.5", "GPT Image 1.5", 0.0667, "Paid", "mucho detalle"],
+  ["openai/gpt-image-2.6-sunburst", "GPT Image 2.6 Sunburst", 0.0667, "Paid", "nuevo"],
+  ["google/gemini-3.1-flash-image", "Nano Banana 2", 0.0667, "Paid", "mejor texto"],
+  ["black-forest-labs/flux.2-max", "FLUX.2 Max", 0.1, "Paid", "máxima consistencia"],
+  ["ideogram-ai/ideogram-v4-quality", "Ideogram 4.0 Quality", 0.1, "Paid", "la mejor tipografía, más lento"],
+  ["qwen/qwen-image-2.1", "Qwen Image 2.1", 0.111, "Paid", "hasta 4K con referencias"],
+  ["black-forest-labs/flux.2-flex", "FLUX.2 Flex", 0.111, "Paid", "centrado en tipografía"],
+  ["google/gemini-3-pro-image", "Nano Banana Pro", 0.143, "Paid", "calidad de estudio, hasta 4K"]
+].map(r => ({ id: r[0], name: r[1], p: r[2], price: fmt(r[2]) + "/img", tier: r[3], note: r[4], rpm: r[5] })).sort((x, y) => x.p - y.p);
+const IMG_ALIAS = { "tongyi-mai/z-image-turbo": ["zimage"], "black-forest-labs/flux.1-schnell": ["flux"], "google/gemini-2.5-flash-image": ["nanobanana"], "google/gemini-3.1-flash-image": ["nanobanana-2"], "google/gemini-3-pro-image": ["nanobanana-pro"] };
+fillSelect($("model"), IMG.map(m => [m.id, `${m.name} · ${m.tier}`]), "tongyi-mai/z-image-turbo");
+function refreshImg() {
+  const m = IMG.find(x => x.id === $("model").value);
+  $("iinfo").textContent = m ? `${m.note}. Nivel: ${m.tier}.` + (m.rpm ? ` Límite: ${m.rpm} peticiones por minuto, así que irá más despacio.` : "") : "";
+}
+$("model").addEventListener("change", refreshImg); refreshImg();
+function imageIds() { const c = $("mcustom").value.trim(); return c ? [c] : idCandidates($("model").value); }
+
+/* ===== Modelos y voces de la API (si responde) ===== */
+let MODELS = [];
+const modelId = m => (m.id || m.name || "");
+const shortId = id => id.toLowerCase().replace(/^.*\//, "");
+function apiEntry(id) { return MODELS.find(x => shortId(modelId(x)) === shortId(id)); }
+function idCandidates(id) {
+  const e = apiEntry(id), out = [];
+  if (e) out.push(modelId(e));
+  out.push(id, shortId(id), ...(IMG_ALIAS[id] || []));
+  return [...new Set(out)];
+}
+const QWEN_VOICES = ["Cherry", "Serena", "Ethan", "Chelsie", "Momo", "Vivian", "Moon", "Maia", "Kai", "Nofish", "Bella", "Jennifer", "Ryan", "Katerina", "Aiden", "Mia", "Mochi", "Bellona", "Vincent", "Bunny", "Neil", "Elias", "Arthur", "Nini", "Seren", "Pip", "Stella", "Bodega", "Dylan", "Jada", "Sunny", "Marcus", "Roy", "Peter", "Rocky", "Kiki", "Eric"];
+const DEFAULT_VOICE = { "openai/tts-1": "nova", "openai/tts-1-hd": "nova", "qwen/qwen3-tts-flash": "Cherry", "qwen/qwen-audio-3.0-tts-flash": "Cherry" };
+const STATIC_VOICES = { "qwen/qwen3-tts-flash": QWEN_VOICES, "qwen/qwen-audio-3.0-tts-flash": QWEN_VOICES, "openai/tts-1": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"], "openai/tts-1-hd": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"] };
+function voiceList(model) {
+  const e = apiEntry(model);
+  const v = e && (e.supported_voices || e.voices);
+  let list = (v || []).map(x => typeof x === "string"
+    ? { id: x, tag: x, label: x }
+    : { id: x.id || x.name, tag: x.locale || x.language || x.lang || x.id || x.name || "", label: [x.name || x.id, x.gender, x.locale || x.language].filter(Boolean).join(" · ") }
+  ).filter(x => x.id);
+  if (!list.length && STATIC_VOICES[model]) list = STATIC_VOICES[model].map(x => ({ id: x, tag: x, label: x }));
+  return list;
+}
+function voicesFor(model, lang) {
+  const all = voiceList(model);
+  if (!lang) return all;
+  const l = lang.toLowerCase(), base = l.split("-")[0];
+  const exact = all.filter(v => v.tag.toLowerCase().startsWith(l));
+  if (exact.length) return exact;
+  const byBase = all.filter(v => v.tag.toLowerCase().startsWith(base + "-") || v.tag.toLowerCase().startsWith(base + "_"));
+  return byBase.length ? byBase : all;
+}
+function refreshVoices() {
+  const model = $("amodel").value, lang = $("lang").value;
+  const all = voiceList(model), list = voicesFor(model, lang);
+  fillSelect($("voice"), [["", "Automática"], ...list.slice(0, 300).map(v => [v.id, v.label])], "");
+  const m = TTS.find(x => x.id === model);
+  $("ainfo").textContent = m ? `${m.note}. Nivel: ${m.tier}.` : "";
+  $("vinfo").textContent = all.length
+    ? `${list.length} de ${all.length} voces para este idioma.` + (list.length === all.length && lang ? " Este modelo no marca idioma por voz, así que salen todas." : "")
+    : "No pude leer la lista de voces de la API: deja Automática o escribe un id abajo.";
+}
+function refreshMusic() {
+  const m = MUSIC.find(x => x.id === $("mmodel").value);
+  $("minfo").textContent = m ? `${m.note}. Nivel: ${m.tier}.` : "";
+}
+$("amodel").addEventListener("change", refreshVoices);
+$("lang").addEventListener("change", refreshVoices);
+$("mmodel").addEventListener("change", refreshMusic);
+refreshVoices(); refreshMusic();
+
+(async () => {
+  for (const path of ["/v1/models", "/audio/models", "/image/models"]) {
+    try {
+      const r = await fetch(BASE + path); if (!r.ok) continue;
+      const j = await r.json(), arr = Array.isArray(j) ? j : (j.data || j.models || []);
+      if (Array.isArray(arr)) MODELS = MODELS.concat(arr.filter(x => x && typeof x === "object"));
+    } catch (e) {}
+  }
+  refreshVoices();
+})();
+
+const SAMPLES = { es: "Hola, esta es una prueba de mi voz para tu cuento.", en: "Hello, this is a test of my voice for your story.", fr: "Bonjour, ceci est un test de ma voix pour ton histoire.", pt: "Olá, este é um teste da minha voz para a sua história.", it: "Ciao, questa è una prova della mia voce per la tua storia.", de: "Hallo, das ist ein Test meiner Stimme für deine Geschichte." };
+
+async function speak(text) {
+  const model = $("amodel").value, lang = $("lang").value, key = $("key").value.trim();
+  let voice = $("vcustom").value.trim() || $("voice").value;
+  if (!voice) voice = DEFAULT_VOICE[model] || (voicesFor(model, lang)[0] || {}).id || "";
+  const speed = +$("vspeed").value, oa = model.startsWith("openai/tts");
+  const ck = [model, voice, oa ? speed : 0, text].join("|");
+  if (audioCache.has(ck)) return audioCache.get(ck);
+  let ab, last;
+  for (const id of idCandidates(model)) {
+    try {
+      const body = { model: id, input: text, response_format: "mp3" };
+      if (voice) body.voice = voice;
+      if (oa) body.speed = speed;
+      const r = await fetch(BASE + "/v1/audio/speech", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(key ? { Authorization: "Bearer " + key } : {}) },
+        body: JSON.stringify(body)
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      ab = await r.arrayBuffer(); break;
+    } catch (e) {
+      last = e;
+      try {
+        ab = await fetchAudio(`${BASE}/audio/${encodeURIComponent(text)}?model=${encodeURIComponent(id)}${voice ? "&voice=" + encodeURIComponent(voice) : ""}${key ? "&key=" + encodeURIComponent(key) : ""}`);
+        break;
+      } catch (e2) { last = e2; }
+    }
+  }
+  if (!ab) throw last || new Error("sin respuesta");
+  audioCache.set(ck, ab);
+  return ab;
+}
+
+async function makeMusic(totalSec) {
+  const model = $("mmodel").value, key = $("key").value.trim(), sung = $("mlang").value;
+  let prompt = $("mp").value.trim() || "calm instrumental";
+  if (sung) prompt += `, with vocals sung in ${$("mlang").selectedOptions[0].text}`;
+  const dur = Math.min(120, Math.ceil(totalSec));
+  let last;
+  for (const id of idCandidates(model)) {
+    try {
+      return await fetchAudio(`${BASE}/audio/${encodeURIComponent(prompt)}?model=${encodeURIComponent(id)}&duration=${dur}&instrumental=${sung ? "false" : "true"}${key ? "&key=" + encodeURIComponent(key) : ""}`);
+    } catch (e) { last = e; }
+  }
+  throw last;
+}
+
+$("vtest").onclick = async () => {
+  $("vtest").disabled = true;
+  try {
+    status("Probando la voz...");
+    const ab = await speak(SAMPLES[($("lang").value || "es").split("-")[0]] || SAMPLES.es);
+    const a = new Audio(URL.createObjectURL(new Blob([ab], { type: "audio/mpeg" })));
+    await a.play(); status("Reproduciendo la prueba.");
+  } catch (err) { status("No pude probar la voz: " + err.message); }
+  $("vtest").disabled = false;
+};
+
+async function exportVideo() {
+  const ok = frames.filter(f => f.img);
+  if (!ok.length) { status("Aún no hay páginas listas para exportar."); return; }
+  stop();
+  $("mp4").disabled = true;
+  const ar = +$("ar").value, LONG = 1280, SR = 48000;
+  const W = (ar >= 1 ? LONG : Math.round(LONG * ar / 2) * 2), H = (ar >= 1 ? Math.round(LONG / ar / 2) * 2 : LONG);
+  const order = ok.map((_, i) => i);
+  if ($("pp").checked) for (let i = ok.length - 2; i > 0; i--) order.push(i);
+  const key = $("key").value.trim(), kq = key ? "&key=" + encodeURIComponent(key) : "";
+  const kb = $("kb").checked, FADE = 10, secs = +$("secs").value;
+  let narr = [], music = null;
+
+  // 1) Voz: un audio por página (se guarda en caché por texto y voz)
+  if ($("vo").checked) {
+    try {
+      for (let i = 0; i < ok.length; i++) {
+        const text = ok[i].cap;
+        status(`Creando voz ${i + 1} de ${ok.length}...`);
+        if (!text) continue;
+        const ab = await speak(text);
+        narr[i] = await decode(ab);
+      }
+    } catch (err) { narr = []; status("La voz falló (" + err.message + "). Sigo sin voz."); await wait(1800); }
+  }
+
+  // 2) Duración de cada página: lo que pidas, o lo que dure la voz + un respiro
+  const per = order.map(idx => Math.round(Math.max(secs, (narr[idx] ? narr[idx].duration + 0.6 : 0)) * FPS_OUT));
+  const starts = []; let total = 0;
+  per.forEach(p => { starts.push(total); total += p; });
+  const totalSec = total / FPS_OUT;
+
+  // 3) Música de fondo
+  if ($("mu").checked) {
+    try {
+      status("Creando música de fondo...");
+      const ab = await makeMusic(totalSec);
+      music = await decode(ab);
+    } catch (err) { status("La música falló (" + err.message + "). Sigo sin música."); await wait(1800); }
+  }
+
+  // 4) Mezcla en un solo audio
+  let mixed = null;
+  const hasVoice = narr.some(Boolean);
+  if (hasVoice || music) {
+    status("Mezclando audio...");
+    const oc = new OfflineAudioContext(2, Math.ceil(totalSec * SR), SR);
+    order.forEach((idx, k) => {
+      if (!narr[idx]) return;
+      const src = oc.createBufferSource(); src.buffer = narr[idx]; src.connect(oc.destination); src.start(starts[k] / FPS_OUT + 0.25);
+    });
+    if (music) {
+      const src = oc.createBufferSource(); src.buffer = music; src.loop = true;
+      const gn = oc.createGain(), base = hasVoice ? 0.14 : 0.5;
+      gn.gain.setValueAtTime(base, 0); gn.gain.setValueAtTime(base, Math.max(0, totalSec - 1.5)); gn.gain.linearRampToValueAtTime(0, totalSec);
+      src.connect(gn); gn.connect(oc.destination); src.start(0);
+    }
+    mixed = await oc.startRendering();
+  }
+
+  // 5) Dibujo de cada fotograma
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  const kenBurns = (i, t, k) => {
+    const im = ok[i].img, z = 1 + 0.12 * (k % 2 ? 1 - t : t);
+    const sc = Math.max(W / im.naturalWidth, H / im.naturalHeight) * z, w = im.naturalWidth * sc, h = im.naturalHeight * sc;
+    g.drawImage(im, (W - w) / 2, (H - h) / 2, w, h);
+  };
+  const wrap = (text, max) => {
+    const out = []; let l = "";
+    for (const w of text.split(" ")) { const t = l ? l + " " + w : w; if (g.measureText(t).width > max && l) { out.push(l); l = w; } else l = t; }
+    if (l) out.push(l); return out;
+  };
+  const caption = (text, a) => {
+    if (!text) return;
+    const px = Math.round(Math.min(W, H) * (text.length > 80 ? 0.052 : text.length > 45 ? 0.062 : 0.075));
+    g.font = `800 ${px}px "Inter", system-ui, sans-serif`;
+    g.textAlign = "center"; g.textBaseline = "middle"; g.lineJoin = "round";
+    const ls = wrap(text, W * 0.84), y0 = H * 0.78 - ((ls.length - 1) * px * 1.15) / 2;
+    g.globalAlpha = a;
+    ls.forEach((l, n) => {
+      const y = y0 + n * px * 1.15;
+      g.lineWidth = px * 0.22; g.strokeStyle = "#000"; g.strokeText(l, W / 2, y);
+      g.fillStyle = "#fff"; g.fillText(l, W / 2, y);
+    });
+    g.globalAlpha = 1;
+  };
+  let kk = 0;
+  const renderFrame = n => {
+    while (kk < order.length - 1 && n >= starts[kk + 1]) kk++;
+    const k = kk, f = n - starts[k], t = f / per[k];
+    g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+    if (kb) {
+      if (k > 0 && f < FADE) { kenBurns(order[k - 1], 1, k - 1); g.globalAlpha = f / FADE; kenBurns(order[k], t, k); g.globalAlpha = 1; }
+      else kenBurns(order[k], t, k);
+      caption(ok[order[k]].cap, Math.min(1, f / 6));
+    } else g.drawImage(ok[order[k]].img, 0, 0, W, H);
+  };
+
+  // 6) Codificar y descargar
+  try {
+    const cfg = { codec: "avc1.640028", width: W, height: H, bitrate: 5e6, framerate: FPS_OUT };
+    const acfg = { codec: "mp4a.40.2", sampleRate: SR, numberOfChannels: 2, bitrate: 128000 };
+    const can = window.VideoEncoder && window.Mp4Muxer && (await VideoEncoder.isConfigSupported(cfg)).supported;
+    if (can) {
+      const useAudio = !!mixed && window.AudioEncoder && (await AudioEncoder.isConfigSupported(acfg)).supported;
+      const muxer = new Mp4Muxer.Muxer({
+        target: new Mp4Muxer.ArrayBufferTarget(),
+        video: { codec: "avc", width: W, height: H },
+        ...(useAudio ? { audio: { codec: "aac", numberOfChannels: 2, sampleRate: SR } } : {}),
+        fastStart: "in-memory"
+      });
+      const enc = new VideoEncoder({ output: (ch, m) => muxer.addVideoChunk(ch, m), error: e => status("Error de vídeo: " + e.message) });
+      enc.configure(cfg);
+      for (let n = 0; n < total; n++) {
+        renderFrame(n);
+        const vf = new VideoFrame(c, { timestamp: Math.round(n * 1e6 / FPS_OUT), duration: Math.round(1e6 / FPS_OUT) });
+        enc.encode(vf, { keyFrame: n % FPS_OUT === 0 });
+        vf.close();
+        if (enc.encodeQueueSize > 8) await wait(10);
+        if (n % 15 === 0) status(`Codificando Short... ${Math.round(n / total * 100)}%`);
+      }
+      await enc.flush();
+      if (useAudio) {
+        status("Codificando audio...");
+        const aenc = new AudioEncoder({ output: (ch, m) => muxer.addAudioChunk(ch, m), error: e => status("Error de audio: " + e.message) });
+        aenc.configure(acfg);
+        const L = mixed.getChannelData(0), R = mixed.getChannelData(mixed.numberOfChannels > 1 ? 1 : 0), CH = 8192;
+        for (let off = 0; off < L.length; off += CH) {
+          const len = Math.min(CH, L.length - off), data = new Float32Array(len * 2);
+          data.set(L.subarray(off, off + len), 0); data.set(R.subarray(off, off + len), len);
+          const ad = new AudioData({ format: "f32-planar", sampleRate: SR, numberOfFrames: len, numberOfChannels: 2, timestamp: Math.round(off / SR * 1e6), data });
+          aenc.encode(ad); ad.close();
+          if (aenc.encodeQueueSize > 8) await wait(5);
+        }
+        await aenc.flush();
+      }
+      muxer.finalize();
+      dl(new Blob([muxer.target.buffer], { type: "video/mp4" }), "short.mp4");
+      status(`Short descargado: ${W}x${H}, ${totalSec.toFixed(1)} s` + (useAudio ? ", con audio." : mixed ? ". Tu navegador no codifica AAC, así que va sin audio." : "."));
+    } else {
+      const mime = ["video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9", "video/webm"].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
+      if (!mime) throw new Error("este navegador no puede grabar vídeo");
+      const rec = new MediaRecorder(c.captureStream(FPS_OUT), { mimeType: mime, videoBitsPerSecond: 5e6 });
+      const parts = []; rec.ondataavailable = e => e.data.size && parts.push(e.data);
+      const done = new Promise(r => rec.onstop = r);
+      rec.start();
+      for (let n = 0; n < total; n++) { renderFrame(n); if (n % 15 === 0) status(`Grabando... ${Math.round(n / total * 100)}%`); await wait(1000 / FPS_OUT); }
+      rec.stop(); await done;
+      const ext = mime.startsWith("video/mp4") ? "mp4" : "webm";
+      dl(new Blob(parts, { type: mime }), "short." + ext);
+      status("Descargado sin audio (" + ext + "). Para voz y música usa Chrome, Edge o Safari recientes.");
+    }
+  } catch (err) {
+    status("No pude exportar: " + err.message);
+  }
+  $("mp4").disabled = false;
+}
+$("secs").oninput = () => $("so").textContent = $("secs").value;
+$("mp4").onclick = exportVideo;
+
+
+</script>
+</body>
+</html>
