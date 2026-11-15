@@ -6,7 +6,8 @@ Escribe una historia corta y se convierte en un **cuaderno animado**: cada pági
 
 👉 **Pruébalo aquí:** [belumoka.com/flipbook-generator](https://belumoka.com/flipbook-generator/)
 
-<!-- CAPTURA: edita este archivo en GitHub y arrastra aquí una captura del flipbook -->
+<img width="686" height="1000" alt="flipbook-captura" src="https://github.com/user-attachments/assets/276f4529-326b-43f0-a70c-8e75a0ebc4e8" />
+
 
 ---
 
