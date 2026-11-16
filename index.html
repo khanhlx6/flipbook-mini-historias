@@ -67,6 +67,7 @@ details[open]>summary{margin-bottom:2px}
 .edit{display:none;gap:8px;max-width:560px;margin:0 auto;width:100%}
 .edit.show{display:flex}
 .edit input{flex:1}
+.connect{display:flex;flex-direction:column;gap:8px;padding:14px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
 .badge{display:flex;flex-direction:column;align-items:center;gap:10px;padding:0 24px 40px}
 .credit{font-size:.82rem;color:var(--mute)}
 .credit a{color:var(--ink);font-weight:600;text-decoration:none;border-bottom:1px solid var(--accent)}
@@ -83,11 +84,15 @@ details[open]>summary{margin-bottom:2px}
 <p class="sub">Escribe una historia corta y se convierte en un cuaderno animado. Cada página se dibuja con la misma semilla y el mismo personaje, y al final lo exportas como Short vertical en MP4 con subtítulos.</p>
 
 <form id="f">
+  <div class="connect">
+    <polli-connect app-key="pk_HaCobPof7pBIRMeo" budget="5" expiry="7"></polli-connect>
+    <small id="cinfo">Conecta tu cuenta de Pollinations para crear tu flipbook. Pagas con tu propio Pollen y tú decides el límite; puedes desconectarte cuando quieras.</small>
+  </div>
   <label>Tu historia
     <textarea id="story" placeholder="Un zorro pequeño encuentra una linterna en el bosque, la enciende y descubre que sus sombras bailan.">Un zorro pequeño encuentra una linterna en el bosque, la enciende y descubre que su sombra baila.</textarea>
   </label>
   <details open>
-    <summary>Texto de cada página (IA de texto, necesita clave)</summary>
+    <summary>Texto de cada página (IA de texto)</summary>
     <label>Cómo crear el texto
       <select id="smode">
         <option value="create" selected>La IA escribe un cuento coherente a partir de mi idea</option>
@@ -124,12 +129,6 @@ details[open]>summary{margin-bottom:2px}
   <label>Otro id de modelo (opcional)
     <input id="mcustom" autocomplete="off" placeholder="si lo rellenas, manda sobre la lista">
   </label>
-  <details>
-    <summary>Clave de Pollinations (opcional)</summary>
-    <label>Con clave, la IA divide la historia en escenas coherentes. Sin ella, se corta el texto en trozos.
-      <input id="key" type="password" placeholder="sk_..." autocomplete="off">
-    </label>
-  </details>
   <details open>
     <summary>Audio del Short (voz y música)</summary>
     <label style="flex-direction:row;align-items:center;gap:8px"><input id="vo" type="checkbox" style="width:auto" checked> Narrar el texto del cuento</label>
@@ -198,13 +197,21 @@ details[open]>summary{margin-bottom:2px}
   </a>
 </footer>
 
+<script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.31/dist/connect.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const BASE = "https://gen.pollinations.ai";
 let frames = [], cur = 0, timer = null, dir = 1, seed = 1, character = "", style = "";
 
-try { $("key").value = localStorage.getItem("pk") || ""; } catch (e) {}
+// Pollinations Pay: la clave sk_ del usuario conectado (solo en su pestaña, nunca se guarda aquí)
+const connectEl = document.querySelector("polli-connect");
+const getKey = () => (connectEl && connectEl.apiKey) || "";
+if (connectEl) connectEl.addEventListener("change", () => {
+  $("cinfo").textContent = getKey()
+    ? "Conectado. Las imágenes, el texto, la voz y la música se pagan con tu Pollen."
+    : "Conecta tu cuenta de Pollinations para crear tu flipbook. Pagas con tu propio Pollen y tú decides el límite; puedes desconectarte cuando quieras.";
+});
 
 const status = t => $("status").textContent = t;
 
@@ -262,7 +269,7 @@ function imgUrl(scene, model, key, ar) {
 }
 
 let modelIds = [], IMG_LIMIT = 3, IMG_GAP = 0, storyCtx = "";
-function frameUrl(f) { return imgUrl(f.scene, modelIds[f.k] || modelIds[0], $("key").value.trim(), +$("ar").value); }
+function frameUrl(f) { return imgUrl(f.scene, modelIds[f.k] || modelIds[0], getKey(), +$("ar").value); }
 function load(i, tries = 3) {
   const fr = frames[i];
   return new Promise(res => {
@@ -288,13 +295,13 @@ $("f").addEventListener("submit", async e => {
   e.preventDefault();
   const text = $("story").value.trim();
   if (!text) { status("Escribe una historia primero."); return; }
+  if (!getKey()) { status("Primero conecta tu cuenta de Pollinations con el botón de arriba."); return; }
   stop();
-  const n = +$("n").value, ar = +$("ar").value, key = $("key").value.trim();
+  const n = +$("n").value, ar = +$("ar").value, key = getKey();
   modelIds = imageIds();
   const IM = IMG.find(m => m.id === $("model").value) || {};
   IMG_LIMIT = IM.rpm ? (IM.rpm >= 120 ? 6 : IM.rpm >= 60 ? 4 : 1) : 3;
   IMG_GAP = IM.rpm ? Math.round(60000 / IM.rpm * IMG_LIMIT) : 0;
-  try { localStorage.setItem("pk", key); } catch (e) {}
   style = $("style").value;
   seed = Math.floor(Math.random() * 1e6);
   $("go").disabled = true;
@@ -308,7 +315,7 @@ $("f").addEventListener("submit", async e => {
     try { const d = await splitAI(text, n, key); scenes = d.scenes; caps = d.captions; character = d.character || ""; }
     catch (err) { status("No pude usar la IA de texto (" + err.message + "). Uso el corte simple."); scenes = splitLocal(text, n); }
   } else {
-    if ($("smode").value === "create") { status("Sin clave no puedo escribir un cuento nuevo: reparto tu texto tal cual."); await wait(1500); }
+    if ($("smode").value === "create") { status("Sin cuenta conectada no puedo escribir un cuento nuevo: reparto tu texto tal cual."); await wait(1500); }
     scenes = splitLocal(text, n);
   }
 
@@ -614,7 +621,7 @@ refreshVoices(); refreshMusic();
 const SAMPLES = { es: "Hola, esta es una prueba de mi voz para tu cuento.", en: "Hello, this is a test of my voice for your story.", fr: "Bonjour, ceci est un test de ma voix pour ton histoire.", pt: "Olá, este é um teste da minha voz para a sua história.", it: "Ciao, questa è una prova della mia voce per la tua storia.", de: "Hallo, das ist ein Test meiner Stimme für deine Geschichte." };
 
 async function speak(text) {
-  const model = $("amodel").value, lang = $("lang").value, key = $("key").value.trim();
+  const model = $("amodel").value, lang = $("lang").value, key = getKey();
   let voice = $("vcustom").value.trim() || $("voice").value;
   if (!voice) voice = DEFAULT_VOICE[model] || (voicesFor(model, lang)[0] || {}).id || "";
   const speed = +$("vspeed").value, oa = model.startsWith("openai/tts");
@@ -647,7 +654,7 @@ async function speak(text) {
 }
 
 async function makeMusic(totalSec) {
-  const model = $("mmodel").value, key = $("key").value.trim(), sung = $("mlang").value;
+  const model = $("mmodel").value, key = getKey(), sung = $("mlang").value;
   let prompt = $("mp").value.trim() || "calm instrumental";
   if (sung) prompt += `, with vocals sung in ${$("mlang").selectedOptions[0].text}`;
   const dur = Math.min(120, Math.ceil(totalSec));
@@ -680,7 +687,7 @@ async function exportVideo() {
   const W = (ar >= 1 ? LONG : Math.round(LONG * ar / 2) * 2), H = (ar >= 1 ? Math.round(LONG / ar / 2) * 2 : LONG);
   const order = ok.map((_, i) => i);
   if ($("pp").checked) for (let i = ok.length - 2; i > 0; i--) order.push(i);
-  const key = $("key").value.trim(), kq = key ? "&key=" + encodeURIComponent(key) : "";
+  const key = getKey(), kq = key ? "&key=" + encodeURIComponent(key) : "";
   const kb = $("kb").checked, FADE = 10, secs = +$("secs").value;
   let narr = [], music = null;
 
