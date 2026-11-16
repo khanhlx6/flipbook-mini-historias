@@ -53,7 +53,8 @@ Viết một câu chuyện ngắn và nó sẽ biến thành một **cuốn sác
 
 - Một trình duyệt mới: **Chrome, Edge hoặc Safari** (để xuất MP4 có âm thanh)
 - Kết nối internet
-- *(Tùy chọn)* Kết nối tài khoản Pollinations bằng nút ở đầu trang để AI viết truyện, đọc giọng và tạo nhạc. Bạn thanh toán bằng Pollen của chính mình và tự quyết giới hạn; có thể ngắt kết nối bất cứ lúc nào. Phiên bản hiện tại không cần nhập tay khóa `sk_...` nữa.
+- *(Bắt buộc cho các API tạo nội dung hiện tại)* Kết nối tài khoản Pollinations bằng nút **Kết nối Pollinations** ở đầu trang `index.vi.html` (hoặc dán khóa `sk_...` thủ công từ [enter.pollinations.ai](https://enter.pollinations.ai) nếu mở file cục bộ). Bạn thanh toán bằng Pollen của chính mình và tự quyết giới hạn; có thể ngắt kết nối bất cứ lúc nào.
+  > **Lưu ý:** Bản gốc `index.html` của tác giả gắn App Key `pk_HaCobPof7pBIRMeo` chỉ cho phép domain của tác giả (`belumokasl-hub.github.io`), nên trên fork `khanhlx6.github.io` hãy sử dụng **`index.vi.html`** (đã chuyển sang luồng kết nối tương thích mọi domain).
 
 ## 🚀 Cách dùng
 
