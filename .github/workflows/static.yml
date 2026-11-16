@@ -1,4 +1,7 @@
-# Simple workflow for deploying static content to GitHub Pages
+# Deploy static content to GitHub Pages
+# Trang live: https://khanhlx6.github.io/flipbook-mini-historias/
+# Yêu cầu: Settings -> Pages -> Source = "GitHub Actions" (đã bật cho fork này).
+# Workflow này chạy khi push lên nhánh `main` (nhánh mặc định của fork).
 name: Deploy static content to Pages
 
 on:
@@ -31,13 +34,27 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
+      # Đảm bảo file gốc ở thư mục gốc và tắt Jekyll (tránh lỗi với file bắt đầu bằng _)
+      - name: Prepare site (add .nojekyll, verify index.html)
+        run: |
+          touch .nojekyll
+          if [ ! -f index.html ]; then
+            echo "::error::Không tìm thấy index.html ở thư mục gốc"
+            exit 1
+          fi
+          echo "index.html OK — sẽ deploy lên https://khanhlx6.github.io/flipbook-mini-historias/"
+          ls -lh index.html index.vi.html README.md README.vi.md 2>/dev/null || true
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
+          # Upload entire repository (index.html + index.vi.html + assets)
           path: '.'
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
